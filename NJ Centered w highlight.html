@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Vehicle Immobility Map</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<style>
+    body { margin: 0; padding: 0; }
+
+    #map { 
+        position: fixed; 
+        bottom: 0; 
+        right: 0; 
+        width: 100%; 
+        height: 100%; 
+    }
+
+    /* legend */
+    .legend {
+        background-color: #fff;
+        position: absolute;
+        z-index: 1;
+        bottom: 25px;
+        right: 10px; 
+        border-radius: 3px;
+        width: 120px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        padding: 10px;
+    }
+
+    .legend h5 {
+        margin: 0 0 10px;
+        color: #000000;
+    }
+
+    .legend div span {
+        border-radius: 50%;
+        display: inline-block;
+        height: 10px;
+        margin-right: 5px;
+        width: 10px;
+    }
+
+    /* buttons */
+    #menu {
+    background: #fff;
+    position: absolute;
+    z-index: 1;
+    bottom: 30px;
+    left: 10px;
+    border-radius: 3px;
+    width: 120px;
+    border: 1px solid rgba(0, 0, 0, 0.4);
+    font-family: 'Open Sans', sans-serif;
+    }
+    #menu a {
+        font-size: 13px;
+        color: #404040;
+        display: block;
+        margin: 0;
+        padding: 0;
+        padding: 5px;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+        text-align: center;
+    }
+
+    #menu a:last-child {
+        border: none;
+    }
+
+    #menu a:hover {
+        background-color: #f8f8f8;
+        color: #404040;
+    }
+
+    #menu a.active {
+        background-color: #fd8e3e;
+        color: #ffffff;
+    }
+
+    #menu a.active:hover {
+        background-color: #e6550d;
+    }
+
+        
+    .mapboxgl-popup-content h5 {
+    margin: 0;
+    padding: 0px;
+    }
+
+    .mapboxgl-popup-anchor-top > .mapboxgl-popup-tip {
+    visibility: none;
+    border-bottom-color: #808080;
+    }
+
+    .notbold {
+    font-weight: normal;
+    }​
+
+</style>
+</head>
+
+<body>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">    
+
+    <div id="map">
+        <nav id="menu"></nav>
+        <div id="USA-legend" class="legend">
+            <h5>Density of <br> Vehicle Inaccess <br> in County Subdivision <span class='notbold'>(Total 35592)</span></h5>
+            <div><span style="background-color: #a53703"></span>750+ (<b><small>ppl/sqmi</small></b>)</div>
+            <div><span style="background-color: #e7560d"></span>450-750</div>
+            <div><span style="background-color: #fd8b3a"></span>200-450</div>
+            <div><span style="background-color: #fdc086"></span>50-200</div>
+            <div><span style="background-color: #feecdc"></span>0-50</div>
+        </div>
+        <div id="Top20Percentile-legend" class="legend" style="display: none">
+            <h5>Density of <br> Vehicle Inaccess <br> Top 20-Percentile <span class='notbold'>(7139)</span></h5>
+            <div><span style="background-color: #a53703"></span>750+ (<b><small>ppl/sqmi</small></b>)</div>
+            <div><span style="background-color: #e7560d"></span>450-750</div>
+            <div><span style="background-color: #fd8b3a"></span>200-451</div>
+            <div><span style="background-color: #fdc086"></span>50-200</div>
+        </div>
+        <div id="Top10Percentile-legend" class="legend" style="display: none">
+            <h5>Density of <br> Vehicle Inaccess <br>Top 10-Percentile <span class='notbold'>(3562)</span></h5>
+            <div><span style="background-color: #a53703"></span>750+ (<b><small>ppl/sqmi</small></b>)</div>
+            <div><span style="background-color: #e7560d"></span>450-750</div>
+            <div><span style="background-color: #fd8b3a"></span>200-450</div>
+        </div>
+        <div id="Top05Percentile-legend" class="legend" style="display: none">
+            <h5>Density of <br> Vehicle Inaccess <br>Top 5-Percentile <span class='notbold'>(1781)</span></h5>
+            <div><span style="background-color: #a53703"></span>750+ (<b><small>ppl/sqmi</small></b>)</div>
+            <div><span style="background-color: #e7560d"></span>450-750</div>
+        </div>
+        <div id="Top1000-legend" class="legend" style="display: none">
+            <h5>Density of <br> Vehicle Inaccess <br>Top 1000</h5>
+            <div><span style="background-color: #a53703"></span>750+ (<b><small>ppl/sqmi</small></b>)</div>
+        </div>
+        <div id="Top500-legend" class="legend" style="display: none">
+            <h5>Density of <br> Vehicle Inaccess <br>Top 500</h5>
+            <div><span style="background-color: #a53703"></span>1200+ (<b><small>ppl/sqmi</small></b>)</div>
+        </div>
+<script>
+	mapboxgl.accessToken = 'pk.eyJ1IjoiYmpsaWFuZyIsImEiOiJjbDRlazIyYXUwNDhqM2xxdTBkM2g3d3Y0In0.pThPKcaTbVa39G7aKVfz9Q';
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/bjliang/cl4ejw6mp004e15qem6aq0i30',
+        center: [-74.75, 40.22],
+        minZoom: 3,
+        zoom: 6.8
+    });
+
+    // disable map rotation using right click + drag
+    map.dragRotate.disable();
+    // disable map rotation using touch rotation gesture
+    map.touchZoomRotate.disableRotation();
+    
+    // search bar
+    map.addControl(
+        new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        countries: 'us',
+        marker: {
+            color: 'orange'
+                },
+        mapboxgl: mapboxgl
+            })
+        );    
+
+    map.addControl(new mapboxgl.NavigationControl());
+
+    var filter_cutoffs = [50, 200, 450, 750, 1200]
+    var trancheIds = ['Top20Percentile' , 'Top10Percentile', 'Top05Percentile','Top1000', 'Top500 DensityScores'];
+    var lineIds = ['Top20Percentile-line' , 'Top10Percentile-line', 'Top05Percentile-line','Top1000-line', 'Top500 DensityScores-line'];
+    var hoverlineIds = ['Top20Percentile-hoverline' , 'Top10Percentile-hoverline', 'Top05Percentile-hoverline','Top1000-hoverline', 'Top500 DensityScores-hoverline'];
+
+    map.on('load', () => {
+        map.addSource('rnks', {
+            'type': 'vector',
+            'url': 'mapbox://bjliang.8emqwwy2'
+        });
+
+        map.addLayer({
+            'id': 'USA-hoverline', // for loop it
+            'source': 'rnks',
+            'source-layer': 'version11',
+            'type': 'line',
+            'paint': {
+                'line-color': '#000000',
+                'line-width': ['case',['boolean', ['feature-state', 'hover'], false],
+                        2.5,
+                        0
+                    ],
+            }
+        });
+
+        for (var i = 0; i < trancheIds.length; i++) {
+            var tranche_id = trancheIds[i];
+            var line_id = lineIds[i];
+            var hoverline_id = hoverlineIds[i];
+
+            var tranche_cutoff = filter_cutoffs[i];
+            if (i <= 1) {
+                var oc = 1;
+            } else {
+                var oc = 0.33;
+            }
+
+            map.addLayer(
+            {
+                'id': tranche_id,
+                'source': 'rnks',
+                'source-layer': 'version11',
+                'filter': ['>=', 'density',  tranche_cutoff],
+                'layout': {
+                'visibility': 'none'
+                           },
+                'type': 'fill',
+                'paint': {
+                    'fill-color':[
+                        "step",
+                        ["get", "density"],
+                        "hsl(28, 94%, 93%)",
+                        50,
+                        "hsl(29, 97%, 76%)",
+                        200,
+                        "hsl(25, 98%, 61%)",
+                        450,
+                        "hsl(20, 89%, 48%)",
+                        750,
+                        "#a53703"
+                            ],
+                    },
+                },
+                "road-label-simple"
+            );
+
+            map.addLayer({
+            'id': hoverline_id, // for loop it
+            'source': 'rnks',
+            'source-layer': 'version11',
+            'type': 'line',
+            'paint': {
+                'line-color': '#000000',
+                'line-width': ['case',['boolean', ['feature-state', 'hover'], false],
+                        2.5,
+                        0
+                    ],
+                    },
+            'filter': ['>=', 'density',  tranche_cutoff],
+            },
+                "road-label-simple"
+                );
+            
+            map.addLayer({
+            'id': line_id, // for loop it
+            'source': 'rnks',
+            'source-layer': 'version11',
+            'type': 'line',
+            'paint': {
+                'line-color': "#ffffff",
+                'line-width': 0.25,
+                'line-opacity': oc
+                        },
+            'filter': ['>=', 'density',  tranche_cutoff],
+            'layout': {
+                'visibility': 'none',
+                        },
+                },
+                hoverline_id // the white borders need to be behind the hovers
+                );    
+        }
+    });
+
+    // enumerate ids of the ALL tranche layers
+    var trancheIdsPlusUSA = ['USA'].concat(trancheIds);
+    var lineIdsPlusUSA = ['USA-line'].concat(lineIds);
+    var hoverlineIdsPlusUSA = ['USA-hoverline'].concat(lineIds);
+
+    // the popup
+    var popup = new mapboxgl.Popup(
+        {
+        closeButton: false,
+        closeOnClick: false,
+        closeOnMove: false,
+        anchor: 'top',
+        offset: 23, 
+        maxWidth: 'none'
+        });
+
+    for (var i = 0; i < trancheIdsPlusUSA.length; i++) {
+        var layer_id = trancheIdsPlusUSA[i];
+        map.on('mousemove', layer_id, function (e) {
+            // Change the cursor style as a UI indicator.
+            map.getCanvas().style.cursor = 'pointer';
+            // Display a popup with the name of the county
+            popup.setLngLat(e.lngLat)
+                    .setHTML(
+                        '<u><h5 style="color:black;"><strong>' + 
+                        e.features[0].properties.NAME +
+                        '</strong></h5></u>' +
+                        'Rank: ' +
+                        '<i><span style="background-color: #FFFF00"><strong>' +
+                        e.features[0].properties.rank +
+                        'th</strong></span></i> ' +
+                        '<small>(by density score)</small><br>' +
+                        '<small>Density: ' +
+                        '<strong style="color: orange">' +
+                        e.features[0].properties.density+
+                        '</strong>' +
+                        ' persons per mi<sup>2</sup> face <i> vehicular inaccessibility</i><br>' +
+                        'Percent: ' +
+                        '<strong><span style="color: orange">' +
+                        e.features[0].properties.householdpctLowCarOwnership +
+                        '%</strong></span> of households face <i> vehicular inaccessibility</i><br>'+
+                        '<small>Pop: ' +
+                        '<strong>' +
+                        e.features[0].properties.Population +
+                        '</strong> persons' +
+                        ' | Area: '+
+                        '<strong>' +
+                        e.features[0].properties.landAreaSQM +
+                        '</strong> square miles</small></small>'                           
+                        )                
+                .addTo(map);
+                                            });
+        map.on('mouseleave', layer_id, function() {
+            // you have to have this chuck of code or else you'll have infinite popups
+            map.getCanvas().style.cursor = '';
+            popup.remove(); 
+            });
+    }
+
+    var hoveredCousubId = null;
+    for (var i = 0; i < trancheIdsPlusUSA.length; i++) {
+        var layer_id = trancheIdsPlusUSA[i];
+        map.on('mousemove', layer_id, function (e) {
+                // setFeatureState for opacity and outline
+                if (e.features.length > 0) {
+                    if (hoveredCousubId !== null) {
+                        map.setFeatureState(
+                            {
+                                source: 'rnks', 
+                                sourceLayer: "version11", 
+                                id: hoveredCousubId 
+                            },
+                            { hover: false }
+                        );
+                    }
+                    hoveredCousubId = e.features[0].id;
+                    map.setFeatureState(   
+                        {
+                            source: 'rnks', 
+                            sourceLayer: "version11", 
+                            id: hoveredCousubId 
+                        },
+                        { hover: true }
+                    );
+                }                
+                                            });
+        map.on('mouseleave', layer_id, function() {
+            // when the cursor leaves the country it needs to reset
+            if (hoveredCousubId !== null) {
+                map.setFeatureState(
+                    { 
+                        source: 'rnks', 
+                        sourceLayer: "version11", 
+                        id: hoveredCousubId 
+                    },
+                    { hover: false }
+                );
+            }
+            hoveredCousubId = null;
+            });
+    }
+
+    // intialize legend
+    var legend_names = ['USA-legend', 'Top20Percentile-legend', 'Top10Percentile-legend', 'Top05Percentile-legend', 'Top1000-legend', 'Top500-legend'];
+    
+    // const USALegendEl = document.getElementById('USA-legend');
+    // const Top20PercentileLegendEl = document.getElementById('Top20Percentile-legend');
+    // const Top10PercentileLegendEl = document.getElementById('Top10Percentile-legend');
+    // const Top05PercentileLegendEl = document.getElementById('Top05Percentile-legend');
+    // const Top1000LegendEl = document.getElementById('Top1000-legend');
+    // const Top500LegendEl = document.getElementById('Top500-legend');
+
+    // const legends = [USALegendEl, Top20PercentileLegendEl, Top10PercentileLegendEl, Top05PercentileLegendEl, Top1000LegendEl, Top500LegendEl];
+
+    const legends = [];
+    for (var i = 0; i < legend_names.length; i++) {
+        legends.push(document.getElementById(legend_names[i]));
+    }
+
+    // set up the corresponding toggle button for each tranche and line layer
+    // logic for legend displays
+    for (var i = 0; i < trancheIdsPlusUSA.length; i++) {
+        var layer_id = trancheIdsPlusUSA[i];
+
+        var link = document.createElement('a');
+        link.href = '#';
+        link.className = '';
+        link.textContent = layer_id;
+
+        link.onclick = function(e) {
+            var clickedLayer = this.textContent;
+            e.preventDefault();
+            e.stopPropagation(); 
+            for (var j = 0; j < trancheIdsPlusUSA.length; j++) {
+                if (clickedLayer === trancheIdsPlusUSA[j]) {
+                	layers.children[j].className = 'active';
+                	map.setLayoutProperty(trancheIdsPlusUSA[j], 'visibility', 'visible');
+                	map.setLayoutProperty(lineIdsPlusUSA[j], 'visibility', 'visible');
+                	map.setLayoutProperty(hoverlineIdsPlusUSA[j], 'visibility', 'visible');
+                    legends[j].style.display = 'block';
+                    }
+                else {
+                	layers.children[j].className = '';
+                	map.setLayoutProperty(trancheIdsPlusUSA[j], 'visibility', 'none');
+                	map.setLayoutProperty(lineIdsPlusUSA[j], 'visibility', 'none');
+                	map.setLayoutProperty(hoverlineIdsPlusUSA[j], 'visibility', 'none');
+                    legends[j].style.display = 'none';
+                    }                     
+                }
+            if (clickedLayer === 'Top1000') {
+                map.setLayoutProperty('Numbers500', 'visibility', 'none');
+                map.setLayoutProperty('Numbers1000', 'visibility', 'visible');
+                map.setLayoutProperty('Numbers05pct', 'visibility', 'none');
+                } 
+
+            else if (clickedLayer === 'Top500 DensityScores'){
+                map.setLayoutProperty('Numbers500', 'visibility', 'visible');
+                map.setLayoutProperty('Numbers1000', 'visibility', 'none');
+                map.setLayoutProperty('Numbers05pct', 'visibility', 'none');
+            }    
+            else if (clickedLayer === 'Top05Percentile'){
+                map.setLayoutProperty('Numbers500', 'visibility', 'none');
+                map.setLayoutProperty('Numbers1000', 'visibility', 'none');
+                map.setLayoutProperty('Numbers05pct', 'visibility', 'visible');
+            }
+            else {
+                map.setLayoutProperty('Numbers500', 'visibility', 'none');
+                map.setLayoutProperty('Numbers1000', 'visibility', 'none');
+                map.setLayoutProperty('Numbers05pct', 'visibility', 'none');
+            }                       
+        };
+
+        var layers = document.getElementById('menu');
+        layers.appendChild(link);        
+    }
+</script>
+</body>
+</html>
